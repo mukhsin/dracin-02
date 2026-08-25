@@ -2,7 +2,7 @@ import { beforeAll, describe, expect, test } from "bun:test";
 import { rmSync } from "node:fs";
 
 describe("POST /internal/sync guard", () => {
-  let app: import("../app").ReturnType<typeof createApp>;
+  let app!: ReturnType<(typeof import("../app"))["createApp"]>;
   let createApp: typeof import("../app").createApp;
 
   beforeAll(async () => {

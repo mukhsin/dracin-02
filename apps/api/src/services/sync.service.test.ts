@@ -5,8 +5,8 @@ import { rmSync } from "node:fs";
 describe("sync.service", () => {
   let syncIncremental: typeof import("./sync.service").syncIncremental;
   let syncFull: typeof import("./sync.service").syncFull;
-  let db: import("../db").db;
   let sqlite: BunDatabase;
+  let db!: (typeof import("../db"))["db"];
 
   const payload = {
     status: true,
@@ -88,7 +88,9 @@ describe("sync.service", () => {
 
   test("slug deterministik dan ramah URL", () => {
     const row = sqlite
-      .query<{ slug: string }, []>("SELECT slug FROM dramas WHERE book_id = ?")
+      .query<{ slug: string }, [string]>(
+        "SELECT slug FROM dramas WHERE book_id = ?",
+      )
       .get("42000000001");
     expect(row?.slug).toBe("drama-uji-satu-000001");
   });
@@ -103,7 +105,7 @@ describe("sync.service", () => {
     payload.data[0]!.title = "Drama Uji Satu Revisi";
     await syncIncremental();
     const row = sqlite
-      .query<{ title: string }, []>(
+      .query<{ title: string }, [string]>(
         "SELECT title FROM dramas WHERE book_id = ?",
       )
       .get("42000000001");
