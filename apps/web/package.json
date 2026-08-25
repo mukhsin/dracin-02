@@ -10,10 +10,16 @@
   },
   "dependencies": {
     "@dracin/shared": "workspace:*",
+    "@tailwindcss/vite": "^4.3.3",
     "@tanstack/react-query": "^5.60.0",
     "@tanstack/react-router": "^1.90.0",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "tailwind-merge": "^3.6.0",
+    "tailwindcss": "^4.3.3",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@tanstack/router-plugin": "^1.90.0",
