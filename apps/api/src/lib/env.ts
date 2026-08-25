@@ -7,4 +7,5 @@ export const env = {
   dbPath: process.env.DB_PATH ?? ".data/dracin.db",
   apiProxyUrl: process.env.API_PROXY_URL ?? "http://localhost:3002",
   cronSecret: process.env.CRON_SECRET ?? "",
+  episodeCacheTtlMs: Number(process.env.EPISODE_CACHE_TTL_MS ?? 60_000),
 };

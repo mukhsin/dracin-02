@@ -28,6 +28,46 @@ describe("integrasi API Dracin", () => {
 
   let stub: ReturnType<typeof Bun.serve>;
 
+  /**
+   * Tiruan persis bentuk item scraper lama dracin.js (baris 444-451):
+   * url = ch.cdnList?.[0]?.videoPathList?.[0]?.videoPath || ch.videoUrl,
+   * lalu episodeList.push({ index: ch.chapterIndex, title: `Ep ${n+1}`, url }).
+   */
+  type ProxyEpisode = { index: number; title: string; url: string };
+  function toProxyItem(ch: {
+    chapterIndex: number;
+    cdnList?: { videoPathList?: { videoPath?: string }[] }[];
+    videoUrl?: string;
+  }): ProxyEpisode | null {
+    const url =
+      ch.cdnList?.[0]?.videoPathList?.[0]?.videoPath || ch.videoUrl;
+    return url ? { index: ch.chapterIndex, title: `Ep ${ch.chapterIndex + 1}`, url } : null;
+  }
+  function buildEpisodeList(total: number, fallbackIndex: number): ProxyEpisode[] {
+    return Array.from({ length: total }, (_, i) =>
+      toProxyItem(
+        i === fallbackIndex
+          ? { chapterIndex: i, videoUrl: `https://cdn.contoh.id/fallback-${i}.mp4` }
+          : {
+              chapterIndex: i,
+              cdnList: [
+                { videoPathList: [{ videoPath: `https://cdn.contoh.id/ep-${i}.mp4` }] },
+              ],
+            },
+      ),
+    ).filter((e): e is ProxyEpisode => e !== null);
+  }
+
+  const episodesByBookId: Record<string, ProxyEpisode[]> = {
+    B1: buildEpisodeList(16, 15),
+    B2: buildEpisodeList(24, 0),
+    "42000000001": buildEpisodeList(10, 4),
+    "42000000002": buildEpisodeList(5, 2),
+  };
+
+  /** Jumlah fetch upstream /drama/episodes — dipakai test cache. */
+  let episodeHits = 0;
+
   beforeAll(async () => {
     const tmpDb = `/tmp/opencode/dracin-api-${Date.now()}.db`;
     rmSync(tmpDb, { force: true });
@@ -43,6 +83,27 @@ describe("integrasi API Dracin", () => {
         }
         if (path === "/drama/fetch-all") {
           return Response.json({ ...upstream, total: upstream.data.length });
+        }
+        if (path.startsWith("/drama/episodes/")) {
+          const bookId = decodeURIComponent(
+            path.slice("/drama/episodes/".length),
+          );
+          const items = episodesByBookId[bookId];
+          if (!items) {
+            return new Response("not found", { status: 404 });
+          }
+          episodeHits++;
+          // Bentuk respons proxy persis proxy-index.js:208-213.
+          return Response.json({
+            status: true,
+            total: items.length,
+            metadata: {
+              title: `Metadata ${bookId}`,
+              cover: `https://contoh.id/${bookId}-cover.jpg`,
+              intro: `Intro segar untuk ${bookId}`,
+            },
+            data: items,
+          });
         }
         return new Response("not found", { status: 404 });
       },
@@ -290,6 +351,80 @@ describe("integrasi API Dracin", () => {
       expect(miss.status).toBe(404);
       const missBody = await miss.json();
       expect(missBody.error.code).toBe("NOT_FOUND");
+    });
+  });
+
+  describe("GET /api/dramas/:slug/episodes/:number", () => {
+    // Dijalankan sebelum test lain di blok ini menyentuh B1 agar "fresh" valid.
+    test("(a) fresh: URL dari cdnList, navigasi tepi pertama, meta.source fresh", async () => {
+      const res = await app.request(
+        "/api/dramas/cinta-terlarang-b1/episodes/1",
+      );
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(body.success).toBe(true);
+      expect(body.data.drama).toEqual({
+        slug: "cinta-terlarang-b1",
+        title: "Cinta Terlarang",
+        totalEpisodes: 16,
+      });
+      expect(body.data.episode).toEqual({
+        number: 1,
+        videoUrl: "https://cdn.contoh.id/ep-0.mp4",
+      });
+      expect(body.data.navigation).toEqual({ prevNumber: null, nextNumber: 2 });
+      expect(body.meta.source).toBe("fresh");
+    });
+
+    test("(b) tepi terakhir: episode 16 tanpa next, URL fallback videoUrl", async () => {
+      const body = await (
+        await app.request("/api/dramas/cinta-terlarang-b1/episodes/16")
+      ).json();
+      expect(body.data.navigation).toEqual({ prevNumber: 15, nextNumber: null });
+      expect(body.data.episode.number).toBe(16);
+      expect(body.data.episode.videoUrl).toBe(
+        "https://cdn.contoh.id/fallback-15.mp4",
+      );
+    });
+
+    test("(c) nomor 0 atau 17 -> 404 NOT_FOUND dengan pesan beda", async () => {
+      for (const n of ["0", "17"]) {
+        const res = await app.request(
+          `/api/dramas/cinta-terlarang-b1/episodes/${n}`,
+        );
+        expect(res.status).toBe(404);
+        const body = await res.json();
+        expect(body.success).toBe(false);
+        expect(body.error.code).toBe("NOT_FOUND");
+        expect(body.error.message).toContain("di luar rentang");
+      }
+    });
+
+    test("(d) slug tak ada -> 404 NOT_FOUND", async () => {
+      const res = await app.request("/api/dramas/tak-ada/episodes/1");
+      expect(res.status).toBe(404);
+      const body = await res.json();
+      expect(body.success).toBe(false);
+      expect(body.error.code).toBe("NOT_FOUND");
+      expect(body.error.message).toContain("tak-ada");
+    });
+
+    test("(e) cache TTL: panggilan ulang tak menambah hit upstream, source cache", async () => {
+      const hitsBefore = episodeHits;
+      const first = await (
+        await app.request("/api/dramas/pendekar-emas-b2/episodes/5")
+      ).json();
+      const hitsAfterFirst = episodeHits;
+      expect(hitsAfterFirst).toBeGreaterThan(hitsBefore);
+
+      const second = await (
+        await app.request("/api/dramas/pendekar-emas-b2/episodes/5")
+      ).json();
+      expect(episodeHits).toBe(hitsAfterFirst);
+      expect(second.meta.source).toBe("cache");
+      expect(second.data.episode.videoUrl).toBe(
+        first.data.episode.videoUrl,
+      );
     });
   });
 });

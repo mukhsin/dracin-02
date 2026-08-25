@@ -1,5 +1,6 @@
 import type {
   DramaListData,
+  EpisodeDataDto,
   ErrorEnvelope,
   GenreWithCount,
   SuccessEnvelope,
@@ -8,6 +9,7 @@ import { zValidator } from "@hono/zod-validator";
 import { Hono } from "hono";
 import { listDramasQuerySchema } from "@dracin/shared";
 import { dramaService } from "../services/drama.service";
+import { episodeService } from "../services/episode.service";
 
 export const dramaRoutes = new Hono();
 
@@ -43,4 +45,26 @@ dramaRoutes.get("/:slug", async (c) => {
     success: true,
     data: drama,
   } satisfies SuccessEnvelope<typeof drama>);
+});
+
+// URL video selalu on-demand: diambil segar dari api-proxy, tak tersimpan di DB.
+dramaRoutes.get("/:slug/episodes/:number", async (c) => {
+  const slug = c.req.param("slug");
+  const result = await episodeService.getEpisode(slug, c.req.param("number"));
+  if (!result.ok) {
+    const message =
+      result.reason === "drama-not-found"
+        ? `Drama "${slug}" tidak ditemukan`
+        : `Episode "${c.req.param("number")}" di luar rentang drama ini`;
+    const body: ErrorEnvelope = {
+      success: false,
+      error: { code: "NOT_FOUND", message },
+    };
+    return c.json(body, 404);
+  }
+  return c.json({
+    success: true,
+    data: result.data,
+    meta: { source: result.source },
+  } satisfies SuccessEnvelope<EpisodeDataDto>);
 });

@@ -103,3 +103,21 @@ export const listDramasQuerySchema = z.object({
   sort: z.enum(["newest", "popular", "title"]).default("newest"),
 });
 export type ListDramasQuery = z.infer<typeof listDramasQuerySchema>;
+
+/** Detail satu episode on-demand: URL video segar dari upstream, tak tersimpan di DB. */
+export const episodeDataSchema = z.object({
+  drama: z.object({
+    slug: z.string(),
+    title: z.string(),
+    totalEpisodes: z.number().int(),
+  }),
+  episode: z.object({
+    number: z.number().int().min(1),
+    videoUrl: z.string().nullable(),
+  }),
+  navigation: z.object({
+    prevNumber: z.number().int().nullable(),
+    nextNumber: z.number().int().nullable(),
+  }),
+});
+export type EpisodeDataDto = z.infer<typeof episodeDataSchema>;
