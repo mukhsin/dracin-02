@@ -1,5 +1,6 @@
 import type { ErrorEnvelope, HealthData, SuccessEnvelope } from "@dracin/shared";
 import { Hono } from "hono";
+import { dramaRoutes } from "./routes/dramas";
 import { internalRoutes } from "./routes/internal";
 
 export function createApp() {
@@ -15,6 +16,7 @@ export function createApp() {
   });
 
   app.route("/internal", internalRoutes);
+  app.route("/api/dramas", dramaRoutes);
 
   app.get("/health", (c) => {
     const body: SuccessEnvelope<HealthData> = {
