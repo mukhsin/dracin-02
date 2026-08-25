@@ -8,7 +8,9 @@
     "build": "echo 'api: no build step (bun runs TS directly)'",
     "typecheck": "tsc --noEmit",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate"
+    "db:migrate": "drizzle-kit migrate",
+    "sync:full": "bun src/scripts/sync-full.ts",
+    "test": "bun test"
   },
   "dependencies": {
     "@dracin/shared": "workspace:*",
