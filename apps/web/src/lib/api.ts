@@ -90,3 +90,24 @@ export async function fetchDramaBySlug(slug: string): Promise<DramaDto> {
   );
   return envelope.data;
 }
+
+import { episodeDataSchema } from "@dracin/shared";
+import type { EpisodeDataDto } from "@dracin/shared";
+
+/** Respons /api/dramas/{slug}/episodes/{number} — didefinisikan lokal di web (meta.source opsional). */
+const episodeResponseSchema = z.object({
+  success: z.literal(true),
+  data: episodeDataSchema,
+  meta: z.object({ source: z.string() }).optional(),
+});
+
+export async function fetchEpisode(
+  slug: string,
+  number: number,
+): Promise<EpisodeDataDto> {
+  const envelope = await fetchJson(
+    `/api/dramas/${encodeURIComponent(slug)}/episodes/${encodeURIComponent(String(number))}`,
+    episodeResponseSchema,
+  );
+  return envelope.data;
+}

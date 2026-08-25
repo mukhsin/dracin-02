@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as BrowseRouteImport } from './routes/browse'
 import { Route as DramaSlugRouteImport } from './routes/drama.$slug'
+import { Route as WatchSlugEpisodeRouteImport } from './routes/watch.$slug.$episode'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -28,35 +29,44 @@ const DramaSlugRoute = DramaSlugRouteImport.update({
   path: '/drama/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const WatchSlugEpisodeRoute = WatchSlugEpisodeRouteImport.update({
+  id: '/watch/$slug/$episode',
+  path: '/watch/$slug/$episode',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/browse': typeof BrowseRoute
   '/drama/$slug': typeof DramaSlugRoute
+  '/watch/$slug/$episode': typeof WatchSlugEpisodeRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/browse': typeof BrowseRoute
   '/drama/$slug': typeof DramaSlugRoute
+  '/watch/$slug/$episode': typeof WatchSlugEpisodeRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/browse': typeof BrowseRoute
   '/drama/$slug': typeof DramaSlugRoute
+  '/watch/$slug/$episode': typeof WatchSlugEpisodeRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/browse' | '/drama/$slug'
+  fullPaths: '/' | '/browse' | '/drama/$slug' | '/watch/$slug/$episode'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/browse' | '/drama/$slug'
-  id: '__root__' | '/' | '/browse' | '/drama/$slug'
+  to: '/' | '/browse' | '/drama/$slug' | '/watch/$slug/$episode'
+  id: '__root__' | '/' | '/browse' | '/drama/$slug' | '/watch/$slug/$episode'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   BrowseRoute: typeof BrowseRoute
   DramaSlugRoute: typeof DramaSlugRoute
+  WatchSlugEpisodeRoute: typeof WatchSlugEpisodeRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -82,6 +92,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DramaSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/watch/$slug/$episode': {
+      id: '/watch/$slug/$episode'
+      path: '/watch/$slug/$episode'
+      fullPath: '/watch/$slug/$episode'
+      preLoaderRoute: typeof WatchSlugEpisodeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -89,6 +106,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   BrowseRoute: BrowseRoute,
   DramaSlugRoute: DramaSlugRoute,
+  WatchSlugEpisodeRoute: WatchSlugEpisodeRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
