@@ -1,5 +1,10 @@
-import { dramaListDataSchema, dramaSchema, successEnvelope } from "@dracin/shared";
-import type { DramaDto } from "@dracin/shared";
+import {
+  dramaListDataSchema,
+  dramaSchema,
+  genreWithCountSchema,
+  successEnvelope,
+} from "@dracin/shared";
+import type { DramaDto, GenreWithCount } from "@dracin/shared";
 import { z } from "zod";
 
 const BASE_URL = "";
@@ -37,16 +42,22 @@ async function fetchJson<Schema extends z.ZodType>(
 export interface FetchDramasParams {
   page?: number;
   limit?: number;
+  search?: string;
+  genre?: string;
+  sort?: "newest" | "popular" | "title";
 }
 
 export async function fetchDramas(params: FetchDramasParams = {}) {
-  const { page = 1, limit = 24 } = params;
-  const search = new URLSearchParams({
+  const { page = 1, limit = 24, search, genre, sort } = params;
+  const search_ = new URLSearchParams({
     page: String(page),
     limit: String(limit),
   });
+  if (search) search_.set("search", search);
+  if (genre) search_.set("genre", genre);
+  if (sort && sort !== "newest") search_.set("sort", sort);
   const envelope = await fetchJson(
-    `/api/dramas?${search.toString()}`,
+    `/api/dramas?${search_.toString()}`,
     successEnvelope(dramaListDataSchema),
   );
   return envelope.data;
@@ -59,4 +70,23 @@ export async function fetchFeatured(limit = 10): Promise<DramaDto[]> {
     featuredResponseSchema,
   );
   return envelope.data.items;
+}
+
+export async function fetchGenres(): Promise<GenreWithCount[]> {
+  const envelope = await fetchJson(
+    "/api/dramas/genres",
+    z.object({
+      success: z.literal(true),
+      data: z.array(genreWithCountSchema),
+    }),
+  );
+  return envelope.data;
+}
+
+export async function fetchDramaBySlug(slug: string): Promise<DramaDto> {
+  const envelope = await fetchJson(
+    `/api/dramas/${encodeURIComponent(slug)}`,
+    successEnvelope(dramaSchema),
+  );
+  return envelope.data;
 }
