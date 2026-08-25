@@ -1,0 +1,55 @@
+services:
+  app:
+    build: .
+    restart: unless-stopped
+    environment:
+      PORT: 3001
+      SERVE_SPA: "1"
+      WEB_DIST_DIR: apps/web/dist
+      DB_PATH: /data/dracin.db
+      API_PROXY_URL: http://api-proxy:3002
+      CRON_SECRET: ${CRON_SECRET:?CRON_SECRET wajib diisi di .env}
+    volumes:
+      - dracin-data:/data
+    ports:
+      - "${APP_PORT:-3001}:3001"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "bun",
+          "-e",
+          "fetch('http://localhost:'+process.env.PORT+'/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    depends_on:
+      api-proxy:
+        condition: service_healthy
+
+  api-proxy:
+    build: .
+    restart: unless-stopped
+    working_dir: /app/apps/api-proxy
+    command: ["bun", "index.js"]
+    environment:
+      PORT: 3002
+    env_file:
+      - ./apps/api-proxy/.env
+    expose:
+      - "3002"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "bun",
+          "-e",
+          "fetch('http://localhost:3002/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  dracin-data:
