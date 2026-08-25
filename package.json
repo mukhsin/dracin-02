@@ -1,0 +1,15 @@
+{
+  "name": "dracin",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "(cd apps/api && bun run dev) & (cd apps/web && bun run dev) & wait",
+    "dev:api": "cd apps/api && bun run dev",
+    "dev:web": "cd apps/web && bun run dev",
+    "build": "cd packages/shared && bun run build && cd ../../apps/api && bun run build && cd ../../apps/web && bun run build",
+    "typecheck": "bun run --filter '*' typecheck"
+  }
+}
