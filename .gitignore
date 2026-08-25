@@ -8,3 +8,5 @@ dist/
 *.db
 .data/
 .DS_Store
+
+dracin_session.json
