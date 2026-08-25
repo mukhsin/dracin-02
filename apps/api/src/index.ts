@@ -1,4 +1,9 @@
+import { migrate } from "drizzle-orm/bun-sqlite/migrator";
 import { createApp } from "./app";
+import { db } from "./db";
+
+// Terapkan migrasi otomatis saat boot supaya deploy tinggal jalan.
+migrate(db, { migrationsFolder: `${import.meta.dir}/../drizzle` });
 
 const app = createApp();
 

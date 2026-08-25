@@ -6,15 +6,19 @@
     "dev": "bun --watch src/index.ts",
     "start": "bun src/index.ts",
     "build": "echo 'api: no build step (bun runs TS directly)'",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate"
   },
   "dependencies": {
     "@dracin/shared": "workspace:*",
+    "drizzle-orm": "^0.44.0",
     "hono": "^4.6.0",
     "zod": "^4.0.0"
   },
   "devDependencies": {
     "@types/bun": "^1.2.0",
+    "drizzle-kit": "^0.31.0",
     "typescript": "^5.6.0"
   }
 }
