@@ -8,4 +8,5 @@ export const env = {
   apiProxyUrl: process.env.API_PROXY_URL ?? "http://localhost:3002",
   cronSecret: process.env.CRON_SECRET ?? "",
   episodeCacheTtlMs: Number(process.env.EPISODE_CACHE_TTL_MS ?? 60_000),
+  episodeFetchTimeoutMs: Number(process.env.EPISODE_FETCH_TIMEOUT_MS ?? 120_000),
 };

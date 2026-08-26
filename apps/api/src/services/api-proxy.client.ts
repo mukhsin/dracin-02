@@ -106,7 +106,13 @@ export const apiProxyClient = {
     return getList(`/drama/fetch-all`, 600_000);
   },
 
-  episodes(bookId: string, timeoutMs?: number) {
-    return getEpisodes(bookId, timeoutMs);
+  async episodes(bookId: string) {
+    const timeoutMs = env.episodeFetchTimeoutMs;
+    try {
+      return await getEpisodes(bookId, timeoutMs);
+    } catch (err) {
+      console.warn(`[api-proxy] episodes ${bookId} gagal, retry sekali:`, (err as Error).message);
+      return getEpisodes(bookId, timeoutMs);
+    }
   },
 };

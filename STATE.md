@@ -1,6 +1,44 @@
 # State — Web Streaming Dracin
 
-Terakhir diupdate: 2026-08-25. **Grill selesai, PRD/PLAN/SPEC + 11 tiket diterbitkan.** Siap eksekusi tiket (mulai dari #01).
+Terakhir diupdate: 2026-08-26. **Eksekusi selesai — 11/11 tiket ter-commit & ter-push ke `main`.**
+
+## Status tiket
+
+| # | Tiket | Commit | Verifikasi |
+|---|-------|--------|-----------|
+| 01 | Scaffold monorepo | 040fed9 | typecheck+smoke test |
+| 02 | Port api-proxy | ed5ba28 | struktur jalan (/health OK); **live upstream menunggu SECRET_KEY asli** |
+| 03 | Skema DB | c054e40 | migrasi auto-boot terbukti |
+| 04 | Sync e2e | 262a21a + 9271cdc | 23 test integrasi lolos (idempoten, guard) |
+| 05 | API katalog | 1559efb | test search/genre/sort/paginasi/404 |
+| 06 | Episode on-demand | b451da7 | test fresh/cache, prev-next, cache-hit |
+| 07 | SPA shell homepage | 31c7033 | build sukses |
+| 08 | Browse | fddac7e | URL-driven state |
+| 09 | Detail drama | 1b98ff8 | 404 khusus |
+| 10 | Player watch | eb3a048 | HLS/native/fallback |
+| 11 | Deploy Dokploy | 55d21a3 | **build image belum pernah dijalankan** (lokal tanpa Docker daemon) |
+
+## Sisa langkah manual user
+
+1. Isi `apps/api-proxy/.env` dengan SECRET_KEY DramaBox asli → verifikasi live `/drama/latest`.
+2. Deploy ke VPS via `docs/DEPLOY.md`; jalankan sekali `docker compose build` untuk validasi image.
+3. Seed awal: `docker compose exec app bun apps/api/src/scripts/sync-full.ts`.
+4. Cron Dokploy tiap 6 jam → POST /internal/sync dengan bearer CRON_SECRET.
+
+## Catatan lingkungan dev
+
+- Direname dari `workspace/dracin` → `dracin-02`; shell default cwd kadang basi → selalu set workdir.
+- git safe.directory sudah di-add global.
+- esbuild binary di node_modules tak punya bit exec (owned uid lain): build web pakai `ESBUILD_BINARY_PATH=/tmp/opencode/bin/esbuild bun run --filter '@dracin/web' build`.
+
+## Deviasi kecil dari spec
+
+- Sortir `rating` diganti `popular` (urut playCount numerik) — upstream DramaBox tidak menyediakan rating.
+
+## Fakta referensi
+
+- Cache docs & kode repo lama: `/tmp/opencode/old-repo-docs/` (API.md, ARCHITECTURE.md, dracin.js, proxy-index.js, token.js).
+- URL video upstream: `ch.cdnList[0].videoPathList[0].videoPath || ch.videoUrl`; item episode `index` 0-based.
 
 ## Proyek
 
